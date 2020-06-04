@@ -1,0 +1,60 @@
+<!-- HTML Example -->
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="/css/starter-sample.css" />
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://unpkg.com/obniz@3.5.0/obniz.js"></script>
+  </head>
+  <body>
+    <div id="obniz-debug"></div>
+
+ <!--LEDのON/OFFボタン-->
+      <div class="led">
+        <h3 class="text-center">What are you listening?</h3>
+        <button class="btn btn-primary" id="on">meeting</button>
+        <button class="btn btn-outline-primary" id="off">music</button>
+      </div>
+    </div>
+
+    <script>
+      var obniz = new Obniz("2180-0676");
+      obniz.onconnect = async function() {
+        var led = obniz.wired("LED", { anode: 0, cathode: 1 });
+        obniz.display.clear();
+        obniz.display.print("What are you listening?");
+
+        obniz.switch.onchange = function(state) {
+          $("#print").text(state);
+          obniz.display.clear();
+          obniz.display.print(state);
+        };
+
+        $("#showtime").on("click", function() {
+          obniz.display.clear();
+          obniz.display.print($("#text").val());
+        });
+
+        $("#on").click(function() {
+          led.on();
+          obniz.display.clear();
+          obniz.display.font('Avenir',50)
+          obniz.display.print("💬");
+        });
+
+        $("#off").click(function() {
+          led.off();
+          obniz.display.clear();
+          obniz.display.font('Avenir',50)
+          obniz.display.print("🥁");
+        });
+      };
+    </script>
+  </body>
+</html>
