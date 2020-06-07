@@ -13,18 +13,25 @@
     <script src="https://unpkg.com/obniz@3.5.0/obniz.js"></script>
   </head>
   <body>
+
+    <div>KINKOGI</div>
+    <button type="button" onclick="init()">Start</button>
+    <div id="label-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
+
     <div id="obniz-debug"></div>
 
  <!--LEDのON/OFFボタン-->
-      <div class="led">
+      <!-- <div class="led">
         <h3 class="text-center">What are you listening?</h3>
         <button class="btn btn-primary" id="on">meeting</button>
         <button class="btn btn-outline-primary" id="off">music</button>
       </div>
-    </div>
+    </div>-->
 
     <script>
-      var obniz = new Obniz("2180-0676");
+      var obniz = new Obniz("Obniz_id");
       obniz.onconnect = async function() {
         var led = obniz.wired("LED", { anode: 0, cathode: 1 });
         obniz.display.clear();
@@ -55,6 +62,74 @@
           obniz.display.print("🥁");
         });
       };
+
+       // more documentation available at
+        // https://github.com/tensorflow/tfjs-models/tree/master/speech-commands
+    
+        // the link to your model provided by Teachable Machine export panel
+        const URL = "https://teachablemachine.withgoogle.com/models/0r--ThlGQ/";
+    
+        async function createModel() {
+            const checkpointURL = URL + "model.json"; // model topology
+            const metadataURL = URL + "metadata.json"; // model metadata
+    
+            const recognizer = speechCommands.create(
+                "BROWSER_FFT", // fourier transform type, not useful to change
+                undefined, // speech commands vocabulary feature, not useful for your models
+                checkpointURL,
+                metadataURL);
+    
+            // check that model and metadata are loaded via HTTPS requests.
+            await recognizer.ensureModelLoaded();
+    
+            return recognizer;
+        }
+    
+        async function init() {
+            const recognizer = await createModel();
+            const classLabels = recognizer.wordLabels(); // get class labels
+            const labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < classLabels.length; i++) {
+                labelContainer.appendChild(document.createElement("div"));
+            }
+    
+            // listen() takes two arguments:
+            // 1. A callback function that is invoked anytime a word is recognized.
+            // 2. A configuration object with adjustable fields
+            recognizer.listen(result => {
+                const scores = result.scores; // probability of prediction for each class
+
+　　　　　　　if(result.scores[0]>0.8) {
+                 obniz.display.clear();
+            }else if(result.scores[1]>0.8){
+              obniz.display.clear();
+              obniz.display.font('Avenir',50)
+              obniz.display.print("💬");
+            }else if(result.scores[2]>0.8){
+              obniz.display.clear();
+              obniz.display.font('Avenir',50)
+              obniz.display.print("🥁");
+            }
+
+                // render the probability scores per class
+                for (let i = 0; i < classLabels.length; i++) {
+                    const classPrediction = classLabels[i] + ": " + result.scores[i].toFixed(2);
+                    labelContainer.childNodes[i].innerHTML = classPrediction;
+                }
+            }, {
+                includeSpectrogram: true, // in case listen should return result.spectrogram
+                probabilityThreshold: 0.75,
+                invokeCallbackOnNoiseAndUnknown: true,
+                overlapFactor: 0.50 // probably want between 0.5 and 0.75. More info in README
+            });
+    
+            // Stop the recognition in 5 seconds.
+            // setTimeout(() => recognizer.stopListening(), 5000);
+        }
+
     </script>
+    <script type="text/javascript">
+    </script>
+    
   </body>
 </html>
